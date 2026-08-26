@@ -67,4 +67,4 @@ gh workflow run "Sync to PraisonAI Monorepo" \
 
 ## Monorepo counterpart
 
-Full cross-repo reference: `src/praisonai-agents/.cursor/skills/praisonai-js-hub-intake/reference.md` in [PraisonAI](https://github.com/MervinPraison/PraisonAI) (or see [reference.md](reference.md) in this skill folder).
+Full cross-repo reference: [PraisonAI `.cursor/skills/praisonai-js-hub-intake/reference.md`](https://github.com/MervinPraison/PraisonAI/blob/main/.cursor/skills/praisonai-js-hub-intake/reference.md) or [reference.md](reference.md) in this skill folder.
