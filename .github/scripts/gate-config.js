@@ -49,5 +49,11 @@ module.exports = {
     'qodo-code-review[bot]',
     'greptile-apps[bot]',
   ],
-  externalRepos: [],
+  externalRepos: [
+    {
+      repo: 'MervinPraison/PraisonAI',
+      role: 'hub-intake',
+      issueLinkFormat: 'Fixes MervinPraison/PraisonAI#',
+    },
+  ],
 };

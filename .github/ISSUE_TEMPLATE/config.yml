@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Python SDK / CLI / cross-language issues
+    url: https://github.com/MervinPraison/PraisonAI/issues/new/choose
+    about: Report Python SDK, CLI, or cross-language parity issues on the PraisonAI hub repo
+  - name: Agent-callable tools
+    url: https://github.com/MervinPraison/PraisonAI-Tools/issues/new
+    about: Runtime tool integrations (Composio, Slack, APIs)
+  - name: Documentation
+    url: https://github.com/MervinPraison/PraisonAIDocs/issues
+    about: Docs site content and guides

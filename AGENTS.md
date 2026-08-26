@@ -48,6 +48,19 @@ MervinPraison/PraisonAI-Tools      # Agent-callable tools
 MervinPraison/github-automation-template  # Shared Claude CI hub (private)
 ```
 
+### 2.1.1 Hub intake (Option B)
+
+PraisonAI is the **primary issue inbox** for the brand. TypeScript/JavaScript issues may be filed on [MervinPraison/PraisonAI](https://github.com/MervinPraison/PraisonAI); Claude automation routes fixes **here** via STEP 3-ALT.
+
+| Step | Action |
+|------|--------|
+| 1 | User files issue on PraisonAI (or directly here for npm-only devs) |
+| 2 | Fix implemented in **praisonai-js**; PR body must include `Fixes MervinPraison/PraisonAI#N` when applicable |
+| 3 | After merge, run **Sync to PraisonAI Monorepo** workflow → updates `src/praisonai-ts/` mirror |
+| 4 | Comment PR link on the upstream PraisonAI issue |
+
+Do **not** implement TypeScript features in the monorepo `src/praisonai-ts/` path — that directory is a sync mirror only.
+
 ### 2.2 TypeScript SDK Source Structure
 
 ```

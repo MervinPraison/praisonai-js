@@ -16,6 +16,11 @@ on:
         options:
           - pr
           - commit
+      upstream_issue:
+        description: 'Optional PraisonAI hub issue (e.g. 1234) for traceability in sync PR'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -98,6 +103,7 @@ jobs:
 Automated sync from [\`MervinPraison/praisonai-js\`](https://github.com/MervinPraison/praisonai-js) into \`${TARGET_PATH}\`.
 
 Triggered manually via **Sync to PraisonAI Monorepo** workflow.
+${{ inputs.upstream_issue != '' && format('Upstream hub issue: https://github.com/MervinPraison/PraisonAI/issues/{0}', inputs.upstream_issue) || '' }}
 
 Excludes: \`.github/\`, \`node_modules/\`, \`dist/\`, \`coverage/\`.
 EOF

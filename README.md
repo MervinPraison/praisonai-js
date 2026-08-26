@@ -247,3 +247,13 @@ npx ts-node examples/simple/multi-agent.ts
 npm run test
 ```
 
+## Reporting issues
+
+| Topic | Where to file |
+|-------|----------------|
+| TypeScript / npm (`praisonai`) | Here, or on [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) (preferred hub — fixes still land here) |
+| Python SDK / CLI | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) |
+| Cross-language parity | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) |
+
+After merging fixes here, maintainers run **Sync to PraisonAI Monorepo** (Actions) to update `src/praisonai-ts/` in the monorepo.
+
