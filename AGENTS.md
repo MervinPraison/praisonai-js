@@ -50,15 +50,11 @@ MervinPraison/github-automation-template  # Shared Claude CI hub (private)
 
 ### 2.1.1 Relationship to the PraisonAI monorepo
 
-**Canonical development path:** [MervinPraison/PraisonAI](https://github.com/MervinPraison/PraisonAI) → `src/praisonai-ts/`.
+**Canonical:** [MervinPraison/PraisonAI](https://github.com/MervinPraison/PraisonAI) → `src/praisonai-ts/` (issues + fixes).
 
-| | Monorepo (`src/praisonai-ts/`) | This repo (`praisonai-js`) |
-|--|-------------------------------|----------------------------|
-| Issue filing | **Primary** — report TS bugs on PraisonAI | Optional for npm-only contributors |
-| Fixes | **Implement here** (Claude automation) | Mirror / npm publish checkout |
-| Tests | `cd src/praisonai-ts && npm test` | `npm test` in this repo |
+**This repo:** npm mirror. Sync runs **monorepo → praisonai-js** via the **Sync to praisonai-js** workflow on PraisonAI — not the other way around.
 
-Do **not** document hub automation as routing fixes away from the monorepo. The **Sync to PraisonAI Monorepo** workflow is a optional mirror push when changes land here first — not the primary fix path for PraisonAI issues.
+See [SYNC.md](SYNC.md).
 
 ### 2.2 TypeScript SDK Source Structure
 

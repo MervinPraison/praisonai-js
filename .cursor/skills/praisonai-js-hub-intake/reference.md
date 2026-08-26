@@ -1,8 +1,8 @@
 # TypeScript SDK routing
 
 | Canonical | `MervinPraison/PraisonAI` → `src/praisonai-ts/` |
-| Mirror | `MervinPraison/praisonai-js` (npm; optional direct PRs) |
+| Mirror | `MervinPraison/praisonai-js` (npm) |
 
-Hub issues filed on PraisonAI are fixed in the monorepo, not routed to praisonai-js.
+**Sync direction:** monorepo → praisonai-js via `Sync to praisonai-js` workflow on PraisonAI.
 
-Sync workflow on praisonai-js (→ monorepo) is for mirror updates only when changes land here first.
+Hub issues are fixed in the monorepo, then mirrored to this repo.

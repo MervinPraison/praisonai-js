@@ -255,5 +255,5 @@ npm run test
 | Python SDK / CLI | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) | monorepo Python paths |
 | Cross-language parity | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) | often both |
 
-This repo is an npm-focused mirror. For hub-tracked bugs, use the monorepo — do not expect Claude on PraisonAI to open fix PRs here.
+This repo is the **npm mirror**. Sync: **monorepo `src/praisonai-ts/` → praisonai-js** ([SYNC.md](SYNC.md)).
 
