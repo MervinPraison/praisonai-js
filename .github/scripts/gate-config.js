@@ -32,8 +32,9 @@ module.exports = {
   pypiPackageName: 'praisonai',
   packagePaths: ['src/', 'tests/'],
   finalClaudeScope:
-    'SCOPE: Focus ONLY on the PraisonAI TypeScript SDK (praisonai-js, npm package praisonai). '
-    + 'Do NOT modify Python SDK paths or unrelated repos. Read ALL comments from CodeRabbit, Greptile, and Qodo before responding.',
+    'SCOPE: Focus ONLY on this TypeScript SDK mirror (npm package praisonai). '
+    + 'Canonical development for hub issues is MervinPraison/PraisonAI src/praisonai-ts/ — redirect TS feature work there. '
+    + 'Do NOT modify Python SDK paths. Read ALL comments from CodeRabbit, Greptile, and Qodo before responding.',
   finalClaudeProductValue:
     '4. Product value: review in depth whether the change genuinely adds value — never add features for the sake of adding them. '
     + 'It must strengthen the SDK (simpler, more user-friendly, robust). If it does not clearly add value, request changes or recommend rejecting/closing rather than merging scope creep.\n'
@@ -49,11 +50,5 @@ module.exports = {
     'qodo-code-review[bot]',
     'greptile-apps[bot]',
   ],
-  externalRepos: [
-    {
-      repo: 'MervinPraison/PraisonAI',
-      role: 'hub-intake',
-      issueLinkFormat: 'Fixes MervinPraison/PraisonAI#',
-    },
-  ],
+  externalRepos: [],
 };

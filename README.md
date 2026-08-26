@@ -249,11 +249,11 @@ npm run test
 
 ## Reporting issues
 
-| Topic | Where to file |
-|-------|----------------|
-| TypeScript / npm (`praisonai`) | Here, or on [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) (preferred hub — fixes still land here) |
-| Python SDK / CLI | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) |
-| Cross-language parity | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) |
+| Topic | Where to file | Where fixes land |
+|-------|---------------|------------------|
+| TypeScript / npm (`praisonai`) | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) | `src/praisonai-ts/` in the monorepo |
+| Python SDK / CLI | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) | monorepo Python paths |
+| Cross-language parity | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) | often both |
 
-After merging fixes here, maintainers run **Sync to PraisonAI Monorepo** (Actions) to update `src/praisonai-ts/` in the monorepo.
+This repo is an npm-focused mirror. For hub-tracked bugs, use the monorepo — do not expect Claude on PraisonAI to open fix PRs here.
 

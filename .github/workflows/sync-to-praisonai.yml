@@ -1,5 +1,8 @@
 name: Sync to PraisonAI Monorepo
 
+# Optional mirror push: praisonai-js → src/praisonai-ts/ on PraisonAI.
+# Canonical development is in the monorepo; use this only when fixes merged here first.
+
 on:
   workflow_dispatch:
     inputs:
