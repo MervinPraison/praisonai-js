@@ -3,7 +3,7 @@
   "stack": "claude",
   "profile": "sdk",
   "mode": "hub",
-  "hubRef": "v1.1.0",
+  "hubRef": "v1.1.8",
   "templateVersion": "1.1.0",
   "installedAt": "2026-08-20T09:25:34Z"
 }
