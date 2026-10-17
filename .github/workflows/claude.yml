@@ -12,7 +12,15 @@ on:
 
 jobs:
   claude:
-    uses: MervinPraison/github-automation-template/.github/workflows/claude-assistant-callable.yml@v1.1.16
+    # A reusable workflow gets at most what the caller grants; without this block
+    # every run failed at startup.
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      id-token: write
+    uses: MervinPraison/github-automation-template/.github/workflows/claude-assistant-callable.yml@v1.1.17
     secrets: inherit
     with:
-      hub_ref: v1.1.16
+      hub_ref: v1.1.17
