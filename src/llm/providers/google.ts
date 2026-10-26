@@ -15,6 +15,7 @@ import type {
   ToolDefinition,
   ToolCall,
 } from './types';
+import { getEnv } from '../openaiClientOptions';
 
 interface GeminiContent {
   role: 'user' | 'model';
@@ -28,7 +29,7 @@ export class GoogleProvider extends BaseProvider {
 
   constructor(modelId: string, config: ProviderConfig = {}) {
     super(modelId, config);
-    this.apiKey = config.apiKey || process.env.GOOGLE_API_KEY || '';
+    this.apiKey = config.apiKey || getEnv('GOOGLE_API_KEY') || '';
     this.baseUrl = config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta';
     
     if (!this.apiKey) {
@@ -56,6 +57,7 @@ export class GoogleProvider extends BaseProvider {
             },
             tools: options.tools ? this.formatTools(options.tools) : undefined,
           }),
+          signal: options.signal,
         }
       );
 
@@ -121,6 +123,7 @@ export class GoogleProvider extends BaseProvider {
               },
               tools: options.tools ? self.formatTools(options.tools) : undefined,
             }),
+            signal: options.signal,
           }
         );
 
@@ -209,6 +212,7 @@ export class GoogleProvider extends BaseProvider {
               responseMimeType: 'application/json',
             },
           }),
+          signal: options.signal,
         }
       );
 

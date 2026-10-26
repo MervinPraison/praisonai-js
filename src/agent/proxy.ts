@@ -1,9 +1,10 @@
-import { Agent as SimpleAgent, AgentTeam as SimpleAgentTeam, SimpleAgentConfig } from './simple';
+import { Agent as SimpleAgent, SimpleAgentConfig } from './simple';
+import { AgentTeam as SimpleAgentTeam } from './team';
 import { Agent as TaskAgent, TaskAgentTeam, TaskAgentConfig } from './types';
 import { Task } from './types';
 import type { ChatCompletionTool } from 'openai/resources/chat/completions';
 
-export interface ProxyAgentConfig extends Partial<SimpleAgentConfig>, Partial<TaskAgentConfig> {
+export interface ProxyAgentConfig extends Partial<SimpleAgentConfig>, Partial<Omit<TaskAgentConfig, 'llm'>> {
   task?: Task;
   tools?: any[];
   toolFunctions?: Record<string, Function>;
@@ -25,7 +26,8 @@ export class Agent {
         goal: config.goal || 'Help complete the task',
         backstory: config.backstory || 'You are an AI assistant',
         verbose: config.verbose,
-        llm: config.llm,
+        // TaskAgent takes a model name; SimpleAgentConfig.llm may be an LLMConfig.
+        llm: typeof config.llm === 'string' ? config.llm : config.llm?.model,
         markdown: config.markdown
       };
       this.taskAgent = new TaskAgent(taskConfig);

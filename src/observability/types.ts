@@ -108,7 +108,21 @@ export interface TraceContext {
  */
 export interface ObservabilityAdapter {
   readonly name: string;
+
+  /**
+   * Whether this adapter can currently deliver traces to its backend.
+   *
+   * MUST be false when the adapter cannot deliver - including when delivery is
+   * simply not implemented. Reporting true while discarding spans is worse
+   * than having no integration at all, because callers stop looking.
+   */
   readonly isEnabled: boolean;
+
+  /**
+   * Whether this adapter has a delivery implementation at all, independent of
+   * configuration. Absent is treated as false by callers that check it.
+   */
+  readonly delivers?: boolean;
   
   // Lifecycle
   initialize?(): Promise<void>;
@@ -173,7 +187,18 @@ export interface ObservabilityToolInfo {
   name: ObservabilityToolName;
   package?: string;
   envKey: string;
+  /**
+   * Additional environment variables that also satisfy this tool's credential
+   * requirement (e.g. a vendor's legacy key name). Any one being set counts as
+   * configured for readiness checks.
+   */
+  altEnvKeys?: string[];
   description: string;
+  /**
+   * Whether traces actually reach this tool's backend. False means the adapter
+   * records spans in memory and sends nothing, no matter how it is configured.
+   */
+  delivers: boolean;
   features: {
     traces: boolean;
     spans: boolean;
@@ -194,15 +219,18 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: 'langfuse',
     envKey: 'LANGFUSE_SECRET_KEY',
     description: 'Langfuse observability platform',
+    delivers: true,
     features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
     docsUrl: 'https://langfuse.com/docs'
   },
   langsmith: {
     name: 'langsmith',
     package: 'langsmith',
-    envKey: 'LANGCHAIN_API_KEY',
+    envKey: 'LANGSMITH_API_KEY',
+    altEnvKeys: ['LANGCHAIN_API_KEY'],
     description: 'LangSmith by LangChain',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: true,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: true },
     docsUrl: 'https://docs.smith.langchain.com'
   },
   langwatch: {
@@ -210,15 +238,17 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: 'langwatch',
     envKey: 'LANGWATCH_API_KEY',
     description: 'LangWatch monitoring',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://docs.langwatch.ai'
   },
   arize: {
     name: 'arize',
-    package: 'arize-phoenix',
+    package: '@arizeai/openinference-core',
     envKey: 'ARIZE_API_KEY',
     description: 'Arize AX (Phoenix)',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://docs.arize.com'
   },
   axiom: {
@@ -226,7 +256,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: '@axiomhq/js',
     envKey: 'AXIOM_TOKEN',
     description: 'Axiom logging and analytics',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://axiom.co/docs'
   },
   braintrust: {
@@ -234,7 +265,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: 'braintrust',
     envKey: 'BRAINTRUST_API_KEY',
     description: 'Braintrust AI evaluation',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://www.braintrust.dev/docs'
   },
   helicone: {
@@ -242,7 +274,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: '@helicone/helicone',
     envKey: 'HELICONE_API_KEY',
     description: 'Helicone observability proxy',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://docs.helicone.ai'
   },
   laminar: {
@@ -250,7 +283,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: '@lmnr-ai/lmnr',
     envKey: 'LMNR_PROJECT_API_KEY',
     description: 'Laminar AI observability',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://docs.lmnr.ai'
   },
   maxim: {
@@ -258,7 +292,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: '@maximai/maxim-js',
     envKey: 'MAXIM_API_KEY',
     description: 'Maxim AI testing',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://docs.getmaxim.ai'
   },
   patronus: {
@@ -266,7 +301,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: 'patronus',
     envKey: 'PATRONUS_API_KEY',
     description: 'Patronus AI evaluation',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://docs.patronus.ai'
   },
   scorecard: {
@@ -274,7 +310,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: '@scorecard-ai/sdk',
     envKey: 'SCORECARD_API_KEY',
     description: 'Scorecard AI testing',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://docs.getscorecard.ai'
   },
   signoz: {
@@ -282,7 +319,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: '@opentelemetry/api',
     envKey: 'SIGNOZ_ACCESS_TOKEN',
     description: 'SigNoz OpenTelemetry',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://signoz.io/docs'
   },
   traceloop: {
@@ -290,7 +328,8 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: '@traceloop/node-server-sdk',
     envKey: 'TRACELOOP_API_KEY',
     description: 'Traceloop OpenLLMetry',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://traceloop.com/docs'
   },
   weave: {
@@ -298,25 +337,29 @@ export const OBSERVABILITY_TOOLS: Record<ObservabilityToolName, ObservabilityToo
     package: 'weave',
     envKey: 'WANDB_API_KEY',
     description: 'Weights & Biases Weave',
-    features: { traces: true, spans: true, events: true, errors: true, metrics: true, export: true },
+    delivers: false,
+    features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false },
     docsUrl: 'https://wandb.ai/site/weave'
   },
   console: {
     name: 'console',
     envKey: '',
     description: 'Console logging (built-in)',
+    delivers: false,
     features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false }
   },
   memory: {
     name: 'memory',
     envKey: '',
     description: 'In-memory storage (built-in)',
+    delivers: false,
     features: { traces: true, spans: true, events: true, errors: true, metrics: false, export: false }
   },
   noop: {
     name: 'noop',
     envKey: '',
     description: 'No-op adapter (disabled)',
+    delivers: false,
     features: { traces: false, spans: false, events: false, errors: false, metrics: false, export: false }
   }
 };
@@ -341,5 +384,7 @@ export function listObservabilityTools(): ObservabilityToolInfo[] {
 export function hasObservabilityToolEnvVar(name: ObservabilityToolName): boolean {
   const info = OBSERVABILITY_TOOLS[name];
   if (!info || !info.envKey) return true; // Built-in tools don't need env vars
-  return !!process.env[info.envKey];
+  if (process.env[info.envKey]) return true;
+  // A vendor's legacy/alternate key name also counts as configured.
+  return (info.altEnvKeys || []).some(key => !!process.env[key]);
 }
