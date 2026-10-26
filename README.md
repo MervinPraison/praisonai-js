@@ -12,8 +12,8 @@ npm install praisonai
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/MervinPraison/praisonai-js.git
-cd praisonai-js
+git clone https://github.com/MervinPraison/PraisonAI.git
+cd src/praisonai-ts
 ```
 
 2. Install dependencies:
@@ -246,14 +246,4 @@ npx ts-node examples/simple/multi-agent.ts
 ```bash
 npm run test
 ```
-
-## Reporting issues
-
-| Topic | Where to file | Where fixes land |
-|-------|---------------|------------------|
-| TypeScript / npm (`praisonai`) | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) | `src/praisonai-ts/` in the monorepo |
-| Python SDK / CLI | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) | monorepo Python paths |
-| Cross-language parity | [PraisonAI](https://github.com/MervinPraison/PraisonAI/issues) | often both |
-
-This repo is the **npm mirror**. Sync: **monorepo `src/praisonai-ts/` → praisonai-js** ([SYNC.md](SYNC.md)).
 

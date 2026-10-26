@@ -3,20 +3,65 @@
   "version": "1.7.4",
   "description": "PraisonAI TypeScript AI Agents Framework - Node.js, npm, and Javascript AI Agents Framework",
   "main": "dist/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./mobile": {
+      "types": "./dist/mobile.d.ts",
+      "import": "./dist/esm/mobile.js",
+      "require": "./dist/mobile.js",
+      "default": "./dist/mobile.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/esm/*.js",
+      "require": "./dist/*.js",
+      "default": "./dist/*.js"
+    },
+    "./*/index": {
+      "types": "./dist/*/index.d.ts",
+      "import": "./dist/esm/*/index.js",
+      "require": "./dist/*/index.js",
+      "default": "./dist/*/index.js"
+    },
+    "./ai": {
+      "types": "./dist/ai/index.d.ts",
+      "import": "./dist/esm/ai/index.js",
+      "require": "./dist/ai/index.js",
+      "default": "./dist/ai/index.js"
+    },
+    "./tools": {
+      "types": "./dist/tools/index.d.ts",
+      "import": "./dist/esm/tools/index.js",
+      "require": "./dist/tools/index.js",
+      "default": "./dist/tools/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "praisonai-ts": "./dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:cjs && npm run build:esm",
+    "build:cjs": "tsc",
+    "build:esm": "tsc -p tsconfig.esm.json && node scripts/esm-shim.js",
+    "verify:dist": "node scripts/verify-dist.mjs",
     "test": "jest",
     "lint": "eslint . --ext .ts",
     "prepare": "npm run build",
     "start": "ts-node src/main.ts",
     "dev": "ts-node-dev --respawn src/main.ts",
     "example:arxiv": "ts-node examples/tools/arxiv-tools.ts",
-    "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prebuild": "npm run clean",
+    "check:webview": "node scripts/webview-gate.mjs",
+    "check:examples": "tsc -p tsconfig.examples.json"
   },
   "keywords": [
     "ai",
@@ -49,6 +94,7 @@
     "@ai-sdk/anthropic": "^3.0.1",
     "@ai-sdk/google": "^3.0.1",
     "@ai-sdk/openai": "^3.0.1",
+    "@ai-sdk/openai-compatible": "^2.0.82",
     "@types/figlet": "^1.7.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.12.0",
@@ -65,14 +111,13 @@
     "@jest/types": "^29.6.3",
     "@jest/globals": "^29.7.0",
     "@ai-sdk/provider-utils": "^2.2.8",
-    "@opentelemetry/api": "^1.9.0"
+    "@opentelemetry/api": "^1.9.0",
+    "esbuild": "^0.25.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "axios": "1.8.4",
-    "dotenv": "^16.4.7",
     "fast-xml-parser": "^4.5.1",
-    "node-fetch": "^2.6.9",
     "openai": "^4.81.0"
   },
   "optionalDependencies": {
@@ -90,6 +135,7 @@
     "@ai-sdk/anthropic": ">=1.0.0",
     "@ai-sdk/google": ">=1.0.0",
     "@ai-sdk/openai": ">=1.0.0",
+    "@ai-sdk/openai-compatible": ">=1.0.0",
     "ai": ">=4.0.0"
   },
   "peerDependenciesMeta": {
@@ -103,6 +149,9 @@
       "optional": true
     },
     "@ai-sdk/google": {
+      "optional": true
+    },
+    "@ai-sdk/openai-compatible": {
       "optional": true
     }
   },

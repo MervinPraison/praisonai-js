@@ -1,10 +1,7 @@
 import OpenAI from 'openai';
-import dotenv from 'dotenv';
+import { buildOpenAIClientOptions, getEnv } from './openaiClientOptions';
 import { Logger } from '../utils/logger';
 import type { ChatCompletionTool, ChatCompletionToolChoiceOption, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-
-// Load environment variables once at the application level
-dotenv.config();
 
 // The API-key check lives in getOpenAIClient(), where the client is actually
 // created — importing the package must not throw for users of non-OpenAI
@@ -95,21 +92,53 @@ function convertToOpenAITool(tool: any): ChatCompletionTool {
     };
 }
 
-// Singleton instance for OpenAI client
-let openAIInstance: OpenAI | null = null;
+// Cached OpenAI client for the env-only fallback path, keyed on the
+// credentials that determine client identity (API key + base URL). Keying on
+// existence alone would reuse a client built from a stale key even after the
+// environment changed — a real defect for long-lived processes (e.g. a mobile
+// app whose settings screen updates the key without restarting).
+let cachedClient: OpenAI | null = null;
+let cachedIdentity: string | null = null;
 
-// Get cached OpenAI client instance
-async function getOpenAIClient(): Promise<OpenAI> {
-    if (!openAIInstance) {
-        if (!process.env.OPENAI_API_KEY) {
-            throw new Error('OPENAI_API_KEY not found in environment variables');
-        }
-        openAIInstance = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY
-        });
-        await Logger.debug('OpenAI client initialized');
+// Get cached OpenAI client instance. Rebuilds when the API key or base URL
+// changes so a rotated/updated credential is picked up without a restart.
+export async function getOpenAIClient(): Promise<OpenAI> {
+    const apiKey = getEnv('OPENAI_API_KEY');
+    if (!apiKey) {
+        throw new Error('OPENAI_API_KEY not found in environment variables');
     }
-    return openAIInstance;
+    const baseURL = getEnv('OPENAI_BASE_URL') ?? '';
+    // Never log `identity`: it contains the secret API key.
+    const identity = `${apiKey}\u0000${baseURL}`;
+    if (cachedClient !== null && cachedIdentity === identity) {
+        return cachedClient;
+    }
+    // Build synchronously and capture in a local before any await. Returning
+    // the local (not the shared field) makes the result immune to a concurrent
+    // credential change or resetOpenAIClient() that runs during the await —
+    // each caller keeps the client it actually built for its own identity.
+    const client = new OpenAI(buildOpenAIClientOptions({
+        apiKey,
+        ...(baseURL ? { baseURL } : {})
+    }));
+    cachedClient = client;
+    cachedIdentity = identity;
+    await Logger.debug('OpenAI client initialized');
+    return client;
+}
+
+/**
+ * Reset the cached env-only OpenAI client so the next call rebuilds it.
+ *
+ * Useful for tests and for a settings screen that wants to force a rebuild
+ * after updating credentials without depending on the cache-invalidation rule.
+ *
+ * @example
+ * resetOpenAIClient();
+ */
+export function resetOpenAIClient(): void {
+    cachedClient = null;
+    cachedIdentity = null;
 }
 
 /** response_format payload for Chat Completions (json_schema / json_object). */
@@ -117,19 +146,49 @@ export type ResponseFormat =
     | { type: 'json_object' }
     | { type: 'json_schema'; json_schema: { name: string; schema: Record<string, any>; strict?: boolean } };
 
+/**
+ * Per-service credential/transport options. Mirrors Python's per-agent
+ * `api_key` / `base_url` so callers can pass credentials without relying on
+ * process env, and can inject a custom `fetch` for browser-like runtimes.
+ */
+export interface OpenAIServiceOptions {
+    apiKey?: string;
+    baseURL?: string;
+    fetch?: typeof fetch;
+    dangerouslyAllowBrowser?: boolean;
+}
+
 export class OpenAIService {
     private model: string;
     private client: OpenAI | null = null;
+    private options: OpenAIServiceOptions;
 
-    constructor(model: string = 'gpt-5-nano') {
+    constructor(model: string = 'gpt-5-nano', options: OpenAIServiceOptions = {}) {
         this.model = model;
+        this.options = options;
         Logger.debug(`OpenAIService initialized with model: ${model}`);
     }
 
     // Lazy initialization of client
     private async getClient(): Promise<OpenAI> {
         if (!this.client) {
-            this.client = await getOpenAIClient();
+            // When explicit credentials/transport are supplied, build a
+            // dedicated client so they are honoured instead of the shared
+            // env-only singleton.
+            if (this.options.apiKey || this.options.baseURL || this.options.fetch) {
+                this.client = new OpenAI(buildOpenAIClientOptions(
+                    {
+                        apiKey: this.options.apiKey || getEnv('OPENAI_API_KEY'),
+                        ...(this.options.baseURL ? { baseURL: this.options.baseURL } : {}),
+                    },
+                    {
+                        fetch: this.options.fetch,
+                        dangerouslyAllowBrowser: this.options.dangerouslyAllowBrowser,
+                    }
+                ));
+            } else {
+                this.client = await getOpenAIClient();
+            }
         }
         return this.client;
     }
@@ -151,7 +210,8 @@ export class OpenAIService {
         temperature: number = 0.7,
         tools?: ChatCompletionTool[],
         tool_choice?: ChatCompletionToolChoiceOption,
-        responseFormat?: ResponseFormat
+        responseFormat?: ResponseFormat,
+        signal?: AbortSignal
     ): Promise<string> {
         await Logger.startSpinner('Generating text with OpenAI...');
         
@@ -176,7 +236,7 @@ export class OpenAIService {
                     tools: openAITools,
                     tool_choice,
                     ...(responseFormat ? { response_format: responseFormat } : {})
-                })
+                }, { signal })
             );
 
             const message = completion.choices[0]?.message;
@@ -211,7 +271,8 @@ export class OpenAIService {
         temperature: number = 0.7,
         tools?: ChatCompletionTool[],
         tool_choice?: ChatCompletionToolChoiceOption,
-        responseFormat?: ResponseFormat
+        responseFormat?: ResponseFormat,
+        signal?: AbortSignal
     ): Promise<LLMResponse> {
         await Logger.startSpinner('Generating chat response...');
 
@@ -230,7 +291,7 @@ export class OpenAIService {
                     tools: openAITools,
                     tool_choice,
                     ...(responseFormat ? { response_format: responseFormat } : {})
-                })
+                }, { signal })
             );
 
             const response = completion.choices[0]?.message;
@@ -265,7 +326,8 @@ export class OpenAIService {
         onToken: (token: string) => void,
         tools?: ChatCompletionTool[],
         tool_choice?: ChatCompletionToolChoiceOption,
-        onToolCall?: (toolCall: any) => void
+        onToolCall?: (toolCall: any) => void,
+        signal?: AbortSignal
     ): Promise<void> {
         await Logger.debug('Starting text stream...', {
             model: this.model,
@@ -293,7 +355,7 @@ export class OpenAIService {
                     stream: true,
                     tools: openAITools,
                     tool_choice
-                })
+                }, { signal })
             );
 
             let fullResponse = '';
@@ -348,7 +410,8 @@ export class OpenAIService {
     async streamChat(
         messages: ChatMessage[],
         temperature: number = 0.7,
-        onToken: (token: string) => void
+        onToken: (token: string) => void,
+        signal?: AbortSignal
     ): Promise<string> {
         await Logger.debug('Starting chat stream with messages...', {
             model: this.model,
@@ -364,7 +427,7 @@ export class OpenAIService {
                     ...this.temperatureParam(temperature),
                     messages: openAIMessages,
                     stream: true
-                })
+                }, { signal })
             );
 
             let fullResponse = '';
@@ -382,6 +445,106 @@ export class OpenAIService {
             return fullResponse;
         } catch (error) {
             await Logger.error('Error in chat stream', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Streaming chat that also surfaces tool calls. Text deltas are emitted
+     * through `onToken` as they arrive; tool-call fragments are accumulated
+     * across chunks and returned once the stream ends. This is the building
+     * block that lets a streaming agent interleave reasoning text with tool
+     * use in a single request (instead of streaming XOR tools).
+     *
+     * @returns The full streamed text plus any accumulated tool calls.
+     */
+    async streamChatWithTools(
+        messages: ChatMessage[],
+        temperature: number = 0.7,
+        tools?: ChatCompletionTool[],
+        onToken?: (token: string) => void,
+        tool_choice?: ChatCompletionToolChoiceOption,
+        responseFormat?: ResponseFormat,
+        signal?: AbortSignal
+    ): Promise<LLMResponse> {
+        await Logger.debug('Starting chat stream with tools...', {
+            model: this.model,
+            messageCount: messages.length
+        });
+
+        try {
+            const openAIMessages = messages.map(convertToOpenAIMessage);
+            const openAITools = tools ? tools.map(convertToOpenAITool) : undefined;
+
+            const stream = await this.getClient().then(client =>
+                client.chat.completions.create({
+                    model: this.model,
+                    ...this.temperatureParam(temperature),
+                    messages: openAIMessages,
+                    stream: true,
+                    tools: openAITools,
+                    tool_choice,
+                    ...(responseFormat ? { response_format: responseFormat } : {})
+                }, { signal })
+            );
+
+            let fullResponse = '';
+            const toolCalls: Record<number, any> = {};
+
+            for await (const chunk of stream) {
+                const delta = chunk.choices[0]?.delta;
+                if (!delta) continue;
+
+                // Stream text deltas as they arrive.
+                if (delta.content) {
+                    const token = delta.content;
+                    fullResponse += token;
+                    if (onToken) onToken(token);
+                }
+
+                // Accumulate tool-call fragments across chunks. The id/name
+                // arrive on the first fragment; arguments stream in pieces.
+                if (delta.tool_calls && delta.tool_calls.length > 0) {
+                    for (const toolCall of delta.tool_calls) {
+                        const index = toolCall.index ?? 0;
+                        if (!toolCalls[index]) {
+                            toolCalls[index] = {
+                                id: toolCall.id || '',
+                                type: toolCall.type || 'function',
+                                function: {
+                                    name: toolCall.function?.name || '',
+                                    arguments: ''
+                                }
+                            };
+                        }
+                        if (toolCall.id) toolCalls[index].id = toolCall.id;
+                        if (toolCall.function?.name) {
+                            toolCalls[index].function.name = toolCall.function.name;
+                        }
+                        if (toolCall.function?.arguments) {
+                            toolCalls[index].function.arguments += toolCall.function.arguments;
+                        }
+                    }
+                }
+            }
+
+            const result: LLMResponse = {
+                content: fullResponse,
+                role: 'assistant'
+            };
+            const collected = Object.keys(toolCalls)
+                .map(k => Number(k))
+                .sort((a, b) => a - b)
+                .map(i => toolCalls[i]);
+            if (collected.length > 0) {
+                result.tool_calls = collected;
+                await Logger.debug('Tool calls detected in stream', { tool_calls: collected });
+            }
+
+            await Logger.debug('Chat stream with tools completed');
+            return result;
+        } catch (error) {
+            await Logger.error('Error in chat stream with tools', error);
             throw error;
         }
     }

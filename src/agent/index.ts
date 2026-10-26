@@ -9,20 +9,37 @@
  */
 
 // Core exports - the main API surface
-export { Agent, AgentTeam, PraisonAIAgents, Agents } from './simple';
-export type { SimpleAgentConfig, AgentTeamConfig, PraisonAIAgentsConfig } from './simple';
+export { Agent } from './simple';
+// From './team', not './simple'. Re-exporting them through ./simple put the
+// whole team subsystem on the webview graph that takes `Agent` from there;
+// see the note at the bottom of ./simple.
+export { AgentTeam, PraisonAIAgents, Agents } from './team';
+export type { SimpleAgentConfig, AgentTeamConfig, PraisonAIAgentsConfig, AgentEvent, AgentStreamOptions, StopReason, AgentMessage } from './simple';
+// Python-parity surfaces (see src/praisonai-ts/SIGNATURE_PARITY.md)
+export type {
+  AgentChatOptions, AgentChatCallOptions, AgentExecuteTask, AgentTaskLike,
+  AgentRetryConfig, AgentMemoryStore, AgentGuardrailFunction, AgentGuardrailEntry,
+  AgentGuardrailInput, AgentHooksInput, AgentWebConfig, AgentTeamProcess, AgentTeamStartOptions,
+  AgentTeamStartDictOptions, AgentTeamStartOptionsInput,
+} from './simple';
 
 // AudioAgent - Speech synthesis and transcription
 export { AudioAgent, createAudioAgent } from './audio';
-export type { AudioAgentConfig, SpeakOptions, TranscribeOptions, SpeakResult, TranscribeResult, AudioProvider } from './audio';
+export type { AudioAgentConfig, AudioConfig, SpeakOptions, TranscribeOptions, SpeakResult, TranscribeResult, AudioProvider } from './audio';
 
 // CodeAgent - Code generation, execution, review, refactoring (Python parity)
-export { CodeAgent, createCodeAgent } from './code';
-export type { CodeConfig, CodeAgentConfig, CodeExecutionResult } from './code';
+export { CodeAgent, createCodeAgent, createSubprocessExecutor } from './code';
+export type {
+  CodeConfig,
+  CodeAgentConfig,
+  CodeExecutionResult,
+  CodeExecutor,
+  CodeExecutorContext,
+} from './code';
 
 // OCRAgent - Optical Character Recognition (Python parity)
 export { OCRAgent, createOCRAgent } from './ocr';
-export type { OCRConfig, OCRAgentConfig, OCRResult, OCRPage } from './ocr';
+export type { OCRConfig, OCRAgentConfig, OCRResult, OCRPage, OCRExtractor, OCRExtractRequest } from './ocr';
 
 // VisionAgent - Image analysis (Python parity)
 export { VisionAgent, createVisionAgent } from './vision';
@@ -41,7 +58,7 @@ export { RealtimeAgent, createRealtimeAgent } from './realtime';
 export type { RealtimeConfig, RealtimeAgentConfig, RealtimeEvent, RealtimeEventType } from './realtime';
 
 // DeepResearchAgent - Research with citations (Python parity enhanced)
-export { DeepResearchAgent, createDeepResearchAgent } from './research';
+export { DeepResearchAgent, createDeepResearchAgent, Provider } from './research';
 export type {
   DeepResearchConfig,
   DeepResearchResponse,
@@ -52,7 +69,6 @@ export type {
   FileSearchCall,
   MCPCall,
   WebSearchCall,
-  Provider,
 } from './research';
 
 // Router exports
@@ -61,7 +77,8 @@ export type { RouterConfig, RouteConfig, RouteContext, SimpleRouterConfig, Simpl
 
 // Task support (for advanced use cases)
 export { Task } from './types';
-export type { TaskConfig, AgentConfig as TaskAgentConfig } from './types';
+export type { TaskConfig, AgentConfig as TaskAgentConfig, TaskOutput, TaskCallback, TaskGuardrail, TaskOnError } from './types';
+export { TASK_STATUS } from './types';
 
 // Legacy compatibility - setTaskMode is deprecated but kept for backward compat
 let useTaskMode = false;
