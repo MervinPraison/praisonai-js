@@ -27,7 +27,7 @@
  * ```
  */
 
-import { randomUUID } from 'crypto';
+import { randomUUID } from '../utils/uuid';
 
 /**
  * Hook event types - matching Python HooksManager + industry standard additions
@@ -251,7 +251,7 @@ export class HooksManager {
      * Get all registered hooks for an event
      */
     getHooks(event: HookEvent): readonly HookConfig[] {
-        return Object.freeze(this.hooks.get(event) ?? []);
+        return Object.freeze([...(this.hooks.get(event) ?? [])]);
     }
 
     /**

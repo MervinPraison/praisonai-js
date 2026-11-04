@@ -26,11 +26,16 @@ export class FileMemory {
   private compactionThreshold: number;
   private autoCompact: boolean;
   private initialized: boolean = false;
+  private initPromise?: Promise<void>;
   private writeQueue: Promise<void> = Promise.resolve();
+  private appendNeedsSeparator: boolean = false;
 
   constructor(config: FileMemoryConfig) {
     this.filePath = config.filePath;
     this.maxEntries = config.maxEntries ?? 10000;
+    if (this.maxEntries < 0) {
+      throw new RangeError('maxEntries must be non-negative');
+    }
     this.embeddingProvider = config.embeddingProvider;
     this.compactionThreshold = config.compactionThreshold ?? 1000;
     this.autoCompact = config.autoCompact ?? true;
@@ -41,10 +46,30 @@ export class FileMemory {
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
+    // Cache the in-flight initialization so concurrent callers await the same
+    // work. The promise stays pending through any threshold-triggered
+    // compaction, so add()/delete() cannot append before the rewrite finishes.
+    if (!this.initPromise) {
+      this.initPromise = this.doInitialize().catch((error) => {
+        // Reset so a later caller can retry after a transient filesystem error.
+        this.initialized = false;
+        this.initPromise = undefined;
+        throw error;
+      });
+    }
+    return this.initPromise;
+  }
+
+  private async doInitialize(): Promise<void> {
+    let shouldCompact = false;
+    // A retry must rebuild from the current log, not a failed attempt's snapshot.
+    this.entries.clear();
 
     try {
       const fs = await import('fs/promises');
       const content = await fs.readFile(this.filePath, 'utf-8').catch(() => '');
+      // A previous instance may have left a record without its final newline.
+      this.appendNeedsSeparator = content.length > 0 && !content.endsWith('\n');
 
       if (content) {
         const lines = content.trim().split('\n').filter(Boolean);
@@ -64,10 +89,7 @@ export class FileMemory {
           }
         }
 
-        // Auto-compact if too many deleted entries
-        if (this.autoCompact && deletedCount > this.compactionThreshold) {
-          await this.compact();
-        }
+        shouldCompact = this.autoCompact && deletedCount > this.compactionThreshold;
       }
     } catch (error: any) {
       if (error.code !== 'ENOENT') {
@@ -75,6 +97,10 @@ export class FileMemory {
       }
     }
 
+    // Keep concurrent callers waiting until the automatic rewrite finishes.
+    if (shouldCompact) {
+      await this.writeCompactedFile();
+    }
     this.initialized = true;
   }
 
@@ -132,6 +158,7 @@ export class FileMemory {
    */
   async getRecent(count: number): Promise<MemoryEntry[]> {
     const all = await this.getAll();
+    if (count === 0) return [];
     return all.slice(-count);
   }
 
@@ -192,7 +219,14 @@ export class FileMemory {
    */
   async compact(): Promise<void> {
     await this.initialize();
+    await this.writeCompactedFile();
+  }
 
+  /**
+   * Rewrite the log with only active entries. Does not call initialize(), so it
+   * is safe to invoke from within the initialization flow without recursing.
+   */
+  private async writeCompactedFile(): Promise<void> {
     const fs = await import('fs/promises');
     const activeEntries = Array.from(this.entries.values()).filter(e => !e.deleted);
 
@@ -228,14 +262,14 @@ export class FileMemory {
     for (const entry of entries) {
       this.entries.set(entry.id, entry as FileMemoryEntry);
     }
-    await this.compact();
+    await this.writeCompactedFile();
   }
 
   /**
    * Build context string from recent memory
    */
   async buildContext(count?: number): Promise<string> {
-    const entries = count ? await this.getRecent(count) : await this.getAll();
+    const entries = count !== undefined ? await this.getRecent(count) : await this.getAll();
     return entries
       .map(e => `${e.role}: ${e.content}`)
       .join('\n');
@@ -243,11 +277,17 @@ export class FileMemory {
 
   private async appendEntry(entry: FileMemoryEntry): Promise<void> {
     // Queue writes to ensure order
-    this.writeQueue = this.writeQueue.then(async () => {
+    const write = this.writeQueue.then(async () => {
       const fs = await import('fs/promises');
-      await fs.appendFile(this.filePath, JSON.stringify(entry) + '\n');
+      // A failed append may have left an unfinished JSONL line.
+      const separator = this.appendNeedsSeparator ? '\n' : '';
+      this.appendNeedsSeparator = true;
+      await fs.appendFile(this.filePath, separator + JSON.stringify(entry) + '\n');
+      this.appendNeedsSeparator = false;
     });
-    await this.writeQueue;
+    // Report this write's error to its caller without blocking later writes.
+    this.writeQueue = write.catch(() => {});
+    await write;
   }
 
   private textSearch(query: string, limit: number): SearchResult[] {
