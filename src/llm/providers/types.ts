@@ -41,6 +41,8 @@ export interface GenerateTextOptions {
   topP?: number;
   frequencyPenalty?: number;
   presencePenalty?: number;
+  /** Abort signal for cancellation — aborts the underlying HTTP request */
+  signal?: AbortSignal;
 }
 
 export interface GenerateTextResult {
@@ -69,6 +71,8 @@ export interface GenerateObjectOptions<T = any> {
   temperature?: number;
   maxTokens?: number;
   maxRetries?: number;
+  /** Abort signal for cancellation — aborts the underlying HTTP request */
+  signal?: AbortSignal;
 }
 
 export interface GenerateObjectResult<T = any> {
@@ -83,6 +87,17 @@ export interface ProviderConfig {
   maxRetries?: number;
   timeout?: number;
   defaultModel?: string;
+  /**
+   * Custom fetch implementation. Lets a host route provider egress through
+   * native code (e.g. a Tauri command), keeping the API key out of the JS
+   * heap and avoiding CORS for embedded webviews. Implies browser support.
+   */
+  fetch?: typeof fetch;
+  /**
+   * Force-enable the OpenAI SDK's browser guard. Auto-detected for
+   * browser-like runtimes when omitted.
+   */
+  dangerouslyAllowBrowser?: boolean;
 }
 
 /**
