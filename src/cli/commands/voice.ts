@@ -3,11 +3,11 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 import { outputJson, formatSuccess, formatError } from '../output/json';
 import * as pretty from '../output/pretty';
 import { EXIT_CODES } from '../spec/cli-spec';
-import { ERROR_CODES } from '../output/errors';
+import { ERROR_CODES, handleCommandError } from '../output/errors';
+import { printCommandHelp } from '../output/help';
 
 export interface VoiceOptions {
   verbose?: boolean;
@@ -46,12 +46,7 @@ export async function execute(args: string[], options: VoiceOptions): Promise<vo
         break;
     }
   } catch (error) {
-    if (outputFormat === 'json') {
-      outputJson(formatError(ERROR_CODES.UNKNOWN, error instanceof Error ? error.message : String(error)));
-    } else {
-      await pretty.error(error instanceof Error ? error.message : String(error));
-    }
-    process.exit(EXIT_CODES.RUNTIME_ERROR);
+    await handleCommandError(outputFormat, error);
   }
 }
 
@@ -76,7 +71,8 @@ async function speakText(args: string[], options: VoiceOptions, outputFormat: st
 
   try {
     const OpenAI = (await import('openai')).default;
-    const client = new OpenAI();
+    const { buildOpenAIClientOptions } = await import('../../llm/openaiClientOptions');
+    const client = new OpenAI(buildOpenAIClientOptions());
 
     const response = await client.audio.speech.create({
       model: 'tts-1',
@@ -133,7 +129,8 @@ async function transcribeAudio(args: string[], options: VoiceOptions, outputForm
 
   try {
     const OpenAI = (await import('openai')).default;
-    const client = new OpenAI();
+    const { buildOpenAIClientOptions } = await import('../../llm/openaiClientOptions');
+    const client = new OpenAI(buildOpenAIClientOptions());
 
     const file = fs.createReadStream(audioFile);
     const response = await client.audio.transcriptions.create({
@@ -238,25 +235,12 @@ async function showHelp(outputFormat: string): Promise<void> {
     ]
   };
 
-  if (outputFormat === 'json') {
-    outputJson(formatSuccess(help));
-  } else {
-    await pretty.heading('Voice Command');
-    await pretty.plain(help.description);
-    await pretty.newline();
-    await pretty.plain('Subcommands:');
-    for (const cmd of help.subcommands) {
-      await pretty.plain(`  ${cmd.name.padEnd(25)} ${cmd.description}`);
-    }
-    await pretty.newline();
-    await pretty.plain('Flags:');
-    for (const flag of help.flags) {
-      await pretty.plain(`  ${flag.name.padEnd(20)} ${flag.description}`);
-    }
-    await pretty.newline();
-    await pretty.dim('Examples:');
-    await pretty.dim('  praisonai-ts voice speak "Hello World" --voice nova');
-    await pretty.dim('  praisonai-ts voice transcribe audio.mp3');
-    await pretty.dim('  praisonai-ts voice voices');
-  }
+  await printCommandHelp(outputFormat, help, {
+    heading: 'Voice Command',
+    examples: [
+      'praisonai-ts voice speak "Hello World" --voice nova',
+      'praisonai-ts voice transcribe audio.mp3',
+      'praisonai-ts voice voices'
+    ]
+  });
 }

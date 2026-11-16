@@ -15,6 +15,7 @@ import type {
   ToolDefinition,
   ToolCall,
 } from './types';
+import { getEnv } from '../openaiClientOptions';
 
 interface AnthropicMessage {
   role: 'user' | 'assistant';
@@ -34,7 +35,7 @@ export class AnthropicProvider extends BaseProvider {
 
   constructor(modelId: string, config: ProviderConfig = {}) {
     super(modelId, config);
-    this.apiKey = config.apiKey || process.env.ANTHROPIC_API_KEY || '';
+    this.apiKey = config.apiKey || getEnv('ANTHROPIC_API_KEY') || '';
     this.baseUrl = config.baseUrl || 'https://api.anthropic.com';
     
     if (!this.apiKey) {
@@ -63,6 +64,7 @@ export class AnthropicProvider extends BaseProvider {
           stop_sequences: options.stop,
           top_p: options.topP,
         }),
+        signal: options.signal,
       });
 
       if (!response.ok) {
@@ -128,6 +130,7 @@ export class AnthropicProvider extends BaseProvider {
             tools: options.tools ? self.formatTools(options.tools) : undefined,
             stream: true,
           }),
+          signal: options.signal,
         });
 
         if (!response.ok) {
@@ -226,6 +229,7 @@ export class AnthropicProvider extends BaseProvider {
           messages: this.formatMessages(messages),
           temperature: options.temperature ?? 0.7,
         }),
+        signal: options.signal,
       });
 
       if (!response.ok) {

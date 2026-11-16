@@ -5,7 +5,7 @@
  * Provides session management with persistent state, memory, and knowledge.
  */
 
-import { randomUUID } from 'crypto';
+import { randomUUID } from '../utils/uuid';
 import type { DbAdapter } from '../db/types';
 
 // ============================================================================
@@ -27,9 +27,19 @@ export interface SessionMessage {
  * Configuration for Session.
  */
 export interface SessionConfig {
-  /** Unique session identifier (auto-generated if not provided) */
+  /**
+   * Unique session identifier (auto-generated if not provided).
+   * Python `session_id` defaults to None and is then generated; TS generates
+   * eagerly - same observable outcome.
+   */
   id?: string;
-  /** User identifier for user-specific operations */
+  /** Python parity: session_id (Optional[str], default None). Alias of `id`; `id` wins when both are given. */
+  sessionId?: string;
+  /**
+   * User identifier for user-specific operations.
+   * Python `user_id` defaults to None and resolves to "default_user"; TS
+   * resolves to "default_user" directly - same observable outcome.
+   */
   userId?: string;
   /** Parent session for hierarchy */
   parent?: Session;
@@ -37,6 +47,8 @@ export interface SessionConfig {
   db?: DbAdapter;
   /** Time-to-live in seconds */
   ttl?: number;
+  /** Python parity: session_ttl (Optional[int], default None). Alias of `ttl`; `ttl` wins when both are given. */
+  sessionTtl?: number;
   /** Memory configuration */
   memoryConfig?: Record<string, any>;
   /** Knowledge configuration */
@@ -111,18 +123,25 @@ export class Session {
   private readonly timeout: number;
   private readonly isRemote: boolean;
 
-  private state: Record<string, any> = {};
+  // State keys are user data, including names inherited by ordinary objects.
+  private state: Record<string, any> = Object.create(null);
   private messages: SessionMessage[] = [];
   private createdAt: number;
   private updatedAt: number;
   private children: Session[] = [];
 
   constructor(config: SessionConfig = {}) {
-    this.id = config.id || randomUUID().slice(0, 8);
+    this.id = config.id || config.sessionId || randomUUID().slice(0, 8);
     this.userId = config.userId || 'default_user';
     this.parent = config.parent;
     this.db = config.db;
-    this.ttl = config.ttl;
+    this.ttl = config.ttl ?? config.sessionTtl;
+    // Python raises ValueError for a negative session_ttl.
+    if (this.ttl !== undefined && this.ttl < 0) {
+      throw new RangeError(
+        `Invalid ttl=${this.ttl} for session ${this.id}. Use undefined (no expiry) or a non-negative number of seconds.`
+      );
+    }
     this.agentUrl = config.agentUrl;
     this.timeout = config.timeout || 30;
     this.isRemote = !!config.agentUrl;
@@ -246,7 +265,7 @@ export class Session {
    * Set entire state object.
    */
   setState(state: Record<string, any>): void {
-    this.state = { ...state };
+    this.state = Object.assign(Object.create(null), state);
     this.updatedAt = Date.now();
   }
 
@@ -254,7 +273,7 @@ export class Session {
    * Clear all state.
    */
   clearState(): void {
-    this.state = {};
+    this.state = Object.create(null);
     this.updatedAt = Date.now();
   }
 
@@ -346,7 +365,7 @@ export class Session {
     const messages = await this.db.getMessages(this.id, 1);
     if (messages.length > 0) {
       const sessionState: SessionState = JSON.parse(messages[0].content || '{}');
-      this.state = sessionState.data || {};
+      this.setState(sessionState.data || {});
       this.messages = sessionState.messages || [];
       this.createdAt = sessionState.createdAt || Date.now();
       this.updatedAt = sessionState.updatedAt || Date.now();
@@ -364,7 +383,7 @@ export class Session {
     return {
       id: this.id,
       userId: this.userId,
-      data: this.state,
+      data: this.getState(),
       messages: this.messages,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
@@ -381,7 +400,7 @@ export class Session {
       userId: json.userId,
       ...config,
     });
-    session.state = json.data || {};
+    session.setState(json.data || {});
     session.messages = json.messages || [];
     session.createdAt = json.createdAt;
     session.updatedAt = json.updatedAt;
