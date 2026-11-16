@@ -1,0 +1,106 @@
+{
+  "partial": [
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "context",
+      "surface": "Agent"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "guardrails",
+      "surface": "Agent"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "knowledge",
+      "surface": "Agent"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "memory",
+      "surface": "Agent"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "reasoningEffort",
+      "surface": "Agent"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "toolConfig",
+      "surface": "Agent"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "web",
+      "surface": "Agent"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "attachments",
+      "surface": "Agent.chat"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "outputPydantic",
+      "surface": "Agent.chat"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/simple.ts",
+      "option": "seed",
+      "surface": "Agent.chat"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/team-options.ts",
+      "option": "context",
+      "surface": "AgentTeam"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/team-options.ts",
+      "option": "execution",
+      "surface": "AgentTeam"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/team-options.ts",
+      "option": "hooks",
+      "surface": "AgentTeam"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/team-memory.ts",
+      "option": "memory",
+      "surface": "AgentTeam"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/team-planning.ts",
+      "option": "planning",
+      "surface": "AgentTeam"
+    },
+    {
+      "file": "src/praisonai-ts/src/memory/adapters.ts",
+      "option": "ragDbPath",
+      "surface": "ChromaMemory"
+    },
+    {
+      "file": "src/praisonai-ts/src/agent/types.ts",
+      "option": "guardrails",
+      "surface": "Task"
+    }
+  ],
+  "surfaces": {
+    "AgentTeam.__init__": [
+      "caching",
+      "guardrails",
+      "knowledge",
+      "learn",
+      "reflection",
+      "web"
+    ],
+    "Task.__init__": [
+      "autonomy",
+      "planning",
+      "reflection",
+      "web"
+    ]
+  },
+  "total": 10
+}

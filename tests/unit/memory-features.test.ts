@@ -10,9 +10,34 @@ import {
   DEFAULT_POLICIES
 } from '../../src/memory';
 
-import * as fs from 'fs/promises';
+import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { Memory } from '../../src/memory/memory';
+
+describe('Memory history limits', () => {
+  test('an explicit zero returns no recent entries', async () => {
+    const memory = new Memory();
+    const first = await memory.add('First message', 'user');
+    const second = await memory.add('Second message', 'assistant');
+
+    expect(memory.getRecent(0)).toEqual([]);
+    expect(memory.getRecent(1)).toEqual([second]);
+    expect(memory.getRecent(3)).toEqual([first, second]);
+    expect(memory.getAll()).toEqual([first, second]);
+  });
+
+  test('zero context entries differs from an omitted limit', async () => {
+    const memory = new Memory();
+    await memory.add('First message', 'user');
+    await memory.add('Second message', 'assistant');
+
+    expect(memory.buildContext(0)).toBe('');
+    expect(memory.buildContext(1)).toBe('assistant: Second message');
+    expect(memory.buildContext()).toBe('user: First message\nassistant: Second message');
+    expect(memory.size).toBe(2);
+  });
+});
 
 describe('FileMemory', () => {
   let tempDir: string;
@@ -76,6 +101,20 @@ describe('FileMemory', () => {
     expect(recent[1].content).toBe('Message 3');
   });
 
+  test('zero history limits survive a file-memory reload', async () => {
+    const memory = createFileMemory({ filePath: testFilePath });
+    const first = await memory.add('First message', 'user');
+    const second = await memory.add('Second message', 'assistant');
+    const reloaded = createFileMemory({ filePath: testFilePath });
+
+    expect(await reloaded.getRecent(0)).toEqual([]);
+    expect(await reloaded.buildContext(0)).toBe('');
+    expect(await reloaded.getRecent(1)).toEqual([second]);
+    expect(await reloaded.buildContext(1)).toBe('assistant: Second message');
+    expect(await reloaded.buildContext()).toBe('user: First message\nassistant: Second message');
+    expect(await reloaded.getAll()).toEqual([first, second]);
+  });
+
   test('delete removes entry', async () => {
     const memory = createFileMemory({ filePath: testFilePath });
     const entry = await memory.add('Hello world', 'user');
@@ -133,6 +172,120 @@ describe('FileMemory', () => {
     expect(all[0].content).toBe('Message 2');
   });
 
+  test.each([
+    { autoCompact: true, compactionThreshold: 1 },
+    { autoCompact: false, compactionThreshold: 1 },
+    { autoCompact: true, compactionThreshold: 2 }
+  ])('reloads deleted entries with %j', async (config) => {
+    const original = createFileMemory({ filePath: testFilePath });
+    const first = await original.add('Deleted user message', 'user');
+    const second = await original.add('Deleted assistant message', 'assistant');
+    const retained = await original.add('Retained message', 'user');
+    await original.delete(first.id);
+    await original.delete(second.id);
+    const beforeReload = await fs.readFile(testFilePath, 'utf-8');
+
+    const reloaded = createFileMemory({ filePath: testFilePath, ...config });
+    await reloaded.initialize();
+    expect(await reloaded.getAll()).toEqual([retained]);
+    expect(await reloaded.get(first.id)).toBeUndefined();
+    expect(await reloaded.get(second.id)).toBeUndefined();
+
+    const afterReload = await fs.readFile(testFilePath, 'utf-8');
+    if (config.autoCompact && config.compactionThreshold === 1) {
+      expect(afterReload.trim().split('\n').map(line => JSON.parse(line)))
+        .toEqual([retained]);
+    } else {
+      expect(afterReload).toBe(beforeReload);
+    }
+
+    const appended = await reloaded.add('New message after reload', 'assistant');
+    const reopened = createFileMemory({ filePath: testFilePath, ...config });
+    expect(await reopened.getAll()).toEqual([retained, appended]);
+  });
+
+  test.each(['add', 'delete'] as const)('%s waits for automatic compaction on reload', async (operation) => {
+    const original = createFileMemory({ filePath: testFilePath });
+    const deleted = await original.add('Deleted message', 'user');
+    const retained = await original.add('Retained message', 'assistant');
+    await original.delete(deleted.id);
+
+    let releaseRename!: () => void;
+    let notifyRename!: () => void;
+    const renameBlocked = new Promise<void>(resolve => { releaseRename = resolve; });
+    const renameReached = new Promise<void>(resolve => { notifyRename = resolve; });
+    const rename = fs.rename;
+    const renameSpy = jest.spyOn(fs, 'rename').mockImplementation(async (from, to) => {
+      notifyRename();
+      await renameBlocked;
+      return rename(from, to);
+    });
+    const appendSpy = jest.spyOn(fs, 'appendFile');
+    const reloaded = createFileMemory({ filePath: testFilePath, compactionThreshold: 0 });
+    const initializing = reloaded.initialize();
+
+    try {
+      await renameReached;
+      const mutation = operation === 'add'
+        ? reloaded.add('Concurrent message', 'user')
+        : reloaded.delete(retained.id);
+      // Let an incorrectly unblocked mutation finish before the snapshot rename.
+      await new Promise<void>(resolve => setImmediate(resolve));
+      await Promise.all(appendSpy.mock.results.map(result => result.value));
+      releaseRename();
+      await initializing;
+      const result = await mutation;
+
+      const reopened = createFileMemory({ filePath: testFilePath, autoCompact: false });
+      expect(await reopened.getAll()).toEqual(operation === 'add' ? [retained, result] : []);
+    } finally {
+      releaseRename();
+      await initializing;
+      renameSpy.mockRestore();
+      appendSpy.mockRestore();
+    }
+  });
+
+  test('retries automatic compaction after a filesystem failure', async () => {
+    const original = createFileMemory({ filePath: testFilePath });
+    const deleted = await original.add('Deleted message', 'user');
+    const retained = await original.add('Retained message', 'assistant');
+    await original.delete(deleted.id);
+    const reloaded = createFileMemory({ filePath: testFilePath, compactionThreshold: 0 });
+    const renameSpy = jest.spyOn(fs, 'rename').mockRejectedValueOnce(new Error('Compaction failed'));
+
+    try {
+      await expect(reloaded.initialize()).rejects.toThrow('Compaction failed');
+      await reloaded.initialize();
+      expect(await reloaded.getAll()).toEqual([retained]);
+      const lines = (await fs.readFile(testFilePath, 'utf-8')).trim().split('\n');
+      expect(lines.map(line => JSON.parse(line))).toEqual([retained]);
+    } finally {
+      renameSpy.mockRestore();
+    }
+  });
+
+  test('initialization retry reads the current log after another writer compacts it', async () => {
+    const original = createFileMemory({ filePath: testFilePath });
+    const deleted = await original.add('Deleted message', 'user');
+    const retained = await original.add('Retained message', 'assistant');
+    await original.delete(deleted.id);
+    const reloaded = createFileMemory({ filePath: testFilePath, compactionThreshold: 0 });
+    const renameSpy = jest.spyOn(fs, 'rename').mockRejectedValueOnce(new Error('Compaction failed'));
+
+    try {
+      await expect(reloaded.initialize()).rejects.toThrow('Compaction failed');
+      await original.delete(retained.id);
+      await original.compact();
+      await reloaded.initialize();
+      expect(await reloaded.getAll()).toEqual([]);
+      await reloaded.compact();
+      expect(await fs.readFile(testFilePath, 'utf-8')).toBe('');
+    } finally {
+      renameSpy.mockRestore();
+    }
+  });
+
   test('toJSON exports entries', async () => {
     const memory = createFileMemory({ filePath: testFilePath });
     await memory.add('Message 1', 'user');
@@ -154,6 +307,18 @@ describe('FileMemory', () => {
 });
 
 describe('AutoMemory', () => {
+  test('zero recent entries does not return stored automatic memories', async () => {
+    const memory = createAutoMemory({
+      policies: [{ name: 'store-all', condition: () => true, action: 'store', priority: 1000 }]
+    });
+    const first = await memory.add('First message', 'user');
+    const second = await memory.add('Second message', 'assistant');
+
+    expect(memory.getRecent(0)).toEqual([]);
+    expect(memory.getRecent(1)).toEqual([second]);
+    expect(memory.getAll()).toEqual([first, second]);
+  });
+
   test('createAutoMemory creates instance', () => {
     const memory = createAutoMemory();
     expect(memory).toBeInstanceOf(AutoMemory);

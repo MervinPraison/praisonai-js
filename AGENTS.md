@@ -32,29 +32,74 @@ Simpler than competitors • More extensible • Faster • Agent-centric
 ### 2.1 Canonical Paths
 
 ```
-praisonai-js/                      # This repository (TypeScript SDK)
-├── src/                           # Source code
-├── tests/                         # Unit & integration tests
-├── examples/                      # TypeScript examples
-├── package.json                   # Package config (npm: praisonai)
-└── .github/                       # CI + Claude automation (hub callers)
+/Users/praison/praisonai-package/
+├── src/
+│   ├── praisonai-agents/          # Python SDK (praisonaiagents)
+│   │   ├── praisonaiagents/       # Python package
+│   │   ├── tests/                 # Unit & integration tests
+│   │   └── examples/              # Package-level examples
+│   │
+│   ├── praisonai-ts/              # TypeScript SDK (this package)
+│   │   ├── src/                   # Source code
+│   │   ├── tests/                 # Unit & integration tests
+│   │   ├── examples/              # TypeScript examples
+│   │   └── package.json           # Package config
+│   │
+│   └── praisonai/                 # Wrapper (praisonai CLI)
+│
+├── examples/                      # Main examples directory
+│   ├── python/                    # Python examples
+│   ├── yaml/                      # YAML configuration examples
+│   └── js/                        # JavaScript/TypeScript examples
+│
+/Users/praison/PraisonAIDocs/      # Documentation (Mintlify)
 ```
 
-Related PraisonAI repositories:
+### 2.1.1 Issue routing and npm mirror
 
+| Step | Location |
+|------|----------|
+| **Report issues** | [MervinPraison/PraisonAI](https://github.com/MervinPraison/PraisonAI) — use the bug/feature templates |
+| **Implement fixes** | **`src/praisonai-ts/`** in this monorepo (this directory) |
+| **npm mirror** | [MervinPraison/praisonai-js](https://github.com/MervinPraison/praisonai-js) — updated from the monorepo, not the fix target |
+
+After a TypeScript PR merges on PraisonAI, maintainers sync the npm mirror:
+
+```bash
+gh workflow run "Sync to praisonai-js" --repo MervinPraison/PraisonAI
 ```
-MervinPraison/PraisonAI            # Python monorepo (praisonaiagents, praisonai CLI)
-MervinPraison/PraisonAI-Tools      # Agent-callable tools
-MervinPraison/github-automation-template  # Shared Claude CI hub (private)
+
+Direction is **monorepo → praisonai-js** only. Do not implement TS fixes in praisonai-js for PraisonAI issues.
+
+### 2.1.2 Issue triage and PR review
+
+Use this section when triaging GitHub issues or reviewing PRs that touch `src/praisonai-ts/`. Root [`AGENTS.md`](../../AGENTS.md) and [`.github/workflows/claude.yml`](../../.github/workflows/claude.yml) point here for TypeScript scope.
+
+**Triage**
+
+| Step | Action |
+|------|--------|
+| 1 | Confirm the issue is TypeScript/JavaScript (`npm install praisonai`), not Python-only |
+| 2 | Read this file and §25 (Python parity) before planning |
+| 3 | Route agent-callable tools → PraisonAI-Tools; lifecycle plugins → PraisonAI-Plugins; docs → PraisonAIDocs |
+| 4 | Plan changes under `src/praisonai-ts/src/` — never in `praisonaiagents/` |
+
+**PR review checklist** (same bar as Python SDK: lightweight and powerful)
+
+- [ ] **Scope:** Fix belongs in TS SDK, not duplicate of Python-only logic in the wrong package
+- [ ] **API surface:** Prefer existing `Agent` options; reject knobs with no consumer or that duplicate behaviour
+- [ ] **Types:** Full TypeScript types; no `any` without justification
+- [ ] **Parity:** If the change mirrors Python, check §25 and update parity trackers when needed
+- [ ] **Tests:** `npm run build && npm test` pass; new behaviour has unit tests in `tests/`
+- [ ] **Deps:** Optional deps only; lazy import heavy modules
+- [ ] **Backward compatible:** Public API breaks require deprecation path
+- [ ] **Mirror:** Do not merge direct fixes to praisonai-js — sync workflow publishes after monorepo merge
+
+**Commands for reviewers and CI**
+
+```bash
+cd src/praisonai-ts && npm install && npm run build && npm test
 ```
-
-### 2.1.1 Relationship to the PraisonAI monorepo
-
-**Canonical:** [MervinPraison/PraisonAI](https://github.com/MervinPraison/PraisonAI) → `src/praisonai-ts/` (issues + fixes).
-
-**This repo:** npm mirror. Sync runs **monorepo → praisonai-js** via the **Sync to praisonai-js** workflow on PraisonAI — not the other way around.
-
-See [SYNC.md](SYNC.md).
 
 ### 2.2 TypeScript SDK Source Structure
 

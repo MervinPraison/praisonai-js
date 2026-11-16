@@ -1,6 +1,6 @@
 # Documentation Parity Tracker (TypeScript/JavaScript)
 
-> **Categories:** 75 | **Documented:** 75 | **Parity:** 100.0%
+> **Categories:** 80 | **Documented:** 77 | **Parity:** 96.2%
 
 This report compares **TypeScript/JavaScript SDK feature categories** against **TypeScript/JavaScript documentation** (docs/js/).
 
@@ -8,96 +8,105 @@ This report compares **TypeScript/JavaScript SDK feature categories** against **
 
 | Metric | Count |
 |--------|-------|
-| Feature Categories | 75 |
-| **Documented Categories** | **75** |
-| **Undocumented Categories** | **0** |
-| **Parity** | **100.0%** |
+| Feature Categories | 80 |
+| **Documented Categories** | **77** |
+| **Undocumented Categories** | **3** |
+| **Parity** | **96.2%** |
 
 ## Documented Categories
 
 | Category | Features | Docs | Lines |
 |----------|----------|------|-------|
 | ✅ AGUI | 1 | 1 | 195 |
-| ✅ AI SDK | 38 | 8 | 1121 |
-| ✅ Agent | 66 | 7 | 2103 |
+| ✅ AI SDK | 38 | 8 | 1143 |
+| ✅ Agent | 110 | 7 | 3043 |
 | ✅ Agent-to-Agent (A2A) | 15 | 1 | 342 |
-| ✅ Approval | 9 | 1 | 165 |
+| ✅ Approval | 18 | 1 | 640 |
 | ✅ Audio | 8 | 1 | 162 |
-| ✅ Auto Generation | 14 | 3 | 620 |
-| ✅ Autonomy | 5 | 1 | 164 |
-| ✅ Bots | 5 | 1 | 184 |
-| ✅ Budget | 1 | 1 | 197 |
-| ✅ CLI | 2 | 1 | 144 |
+| ✅ Auto Generation | 16 | 3 | 618 |
+| ✅ Autonomy | 5 | 1 | 218 |
+| ✅ Bots | 14 | 1 | 184 |
+| ✅ Budget | 2 | 1 | 197 |
+| ✅ CLI | 14 | 1 | 159 |
 | ✅ Caching | 2 | 1 | 249 |
-| ✅ Chunking | 2 | 2 | 299 |
+| ✅ Callbacks | 3 | 1 | 211 |
+| ✅ Chat | 4 | 1 | 100 |
+| ✅ Chunking | 3 | 2 | 298 |
 | ✅ Citations | 3 | 1 | 156 |
-| ✅ Code Execution | 6 | 4 | 464 |
+| ✅ Code Execution | 11 | 5 | 687 |
 | ✅ Conditions | 1 | 1 | 372 |
-| ✅ Configuration | 3 | 1 | 272 |
-| ✅ Context Management | 17 | 2 | 345 |
+| ✅ Configuration | 5 | 1 | 272 |
+| ✅ Context Management | 36 | 2 | 345 |
 | ✅ Criteria | 1 | 1 | 162 |
-| ✅ Database | 14 | 2 | 469 |
-| ✅ Display | 20 | 1 | 342 |
-| ✅ Embeddings | 6 | 3 | 813 |
-| ✅ Evaluation | 8 | 4 | 866 |
-| ✅ Events | 4 | 1 | 157 |
-| ✅ Execution | 4 | 1 | 157 |
-| ✅ Failover | 2 | 1 | 160 |
-| ✅ Files | 10 | 1 | 151 |
-| ✅ Flow | 4 | 1 | 164 |
-| ✅ Gateway | 6 | 1 | 401 |
-| ✅ Guardrails | 6 | 3 | 744 |
-| ✅ Handoffs | 12 | 1 | 179 |
-| ✅ Hooks | 8 | 1 | 199 |
+| ✅ Database | 17 | 2 | 483 |
+| ✅ Display | 22 | 1 | 342 |
+| ✅ Embeddings | 13 | 3 | 946 |
+| ✅ Evaluation | 10 | 4 | 866 |
+| ✅ Events | 4 | 1 | 161 |
+| ✅ Execution | 6 | 1 | 184 |
+| ✅ Failover | 5 | 1 | 160 |
+| ✅ Files | 15 | 1 | 151 |
+| ✅ Flow | 5 | 1 | 164 |
+| ✅ Gateway | 10 | 1 | 401 |
+| ✅ Guardrails | 18 | 3 | 749 |
+| ✅ Handoffs | 16 | 1 | 420 |
+| ✅ Hooks | 8 | 1 | 203 |
 | ✅ Image | 4 | 2 | 282 |
 | ✅ Jobs | 8 | 1 | 156 |
-| ✅ Knowledge | 3 | 2 | 312 |
-| ✅ LLM | 6 | 2 | 279 |
-| ✅ Loops | 11 | 1 | 180 |
-| ✅ MCP | 17 | 4 | 870 |
-| ✅ Memory | 17 | 4 | 779 |
+| ✅ Knowledge | 37 | 2 | 352 |
+| ✅ LLM | 29 | 2 | 279 |
+| ✅ Loops | 11 | 1 | 241 |
+| ✅ MCP | 21 | 4 | 927 |
+| ✅ Memory | 24 | 4 | 840 |
 | ✅ Middleware | 2 | 1 | 162 |
-| ✅ OCR | 2 | 1 | 162 |
-| ✅ Observability | 6 | 28 | 2277 |
-| ✅ Optimizer | 1 | 1 | 162 |
-| ✅ Output | 3 | 1 | 220 |
-| ✅ Parallel Execution | 3 | 2 | 256 |
-| ✅ Planning | 11 | 2 | 525 |
-| ✅ Plugins | 9 | 2 | 710 |
+| ✅ OCR | 7 | 1 | 253 |
+| ✅ Observability | 12 | 28 | 2692 |
+| ✅ Optimizer | 2 | 1 | 162 |
+| ✅ Output | 4 | 1 | 220 |
+| ✅ Parallel Execution | 12 | 2 | 256 |
+| ✅ Planning | 11 | 2 | 529 |
+| ✅ Plugins | 9 | 2 | 749 |
 | ✅ Prompts | 4 | 2 | 262 |
-| ✅ Providers | 24 | 116 | 8071 |
+| ✅ Providers | 26 | 116 | 8327 |
 | ✅ PubSub | 1 | 1 | 149 |
-| ✅ Query | 3 | 2 | 246 |
-| ✅ RAG | 6 | 2 | 386 |
-| ✅ Realtime | 2 | 1 | 150 |
-| ✅ Reflection | 3 | 1 | 147 |
+| ✅ Query | 7 | 2 | 246 |
+| ✅ RAG | 16 | 2 | 386 |
+| ✅ Realtime | 5 | 1 | 237 |
+| ✅ Reflection | 3 | 1 | 151 |
 | ✅ Retrieval | 5 | 1 | 150 |
-| ✅ Routing | 1 | 1 | 153 |
-| ✅ Sandbox | 8 | 2 | 132 |
+| ✅ Routing | 1 | 1 | 252 |
+| ✅ Sandbox | 8 | 2 | 226 |
 | ✅ Scheduler | 2 | 2 | 401 |
 | ✅ Security | 2 | 1 | 157 |
-| ✅ Sessions | 3 | 2 | 429 |
-| ✅ Skills | 7 | 2 | 380 |
-| ✅ Streaming | 2 | 2 | 389 |
-| ✅ Tasks | 4 | 1 | 165 |
-| ✅ Teams | 1 | 1 | 170 |
+| ✅ Sessions | 22 | 2 | 437 |
+| ✅ Skills | 9 | 2 | 380 |
+| ✅ Streaming | 2 | 4 | 1211 |
+| ✅ Tasks | 8 | 1 | 320 |
+| ✅ Teams | 1 | 1 | 200 |
 | ✅ Telemetry | 6 | 2 | 269 |
 | ✅ Templates | 1 | 2 | 598 |
 | ✅ Token Management | 1 | 1 | 159 |
-| ✅ Tools | 34 | 15 | 3218 |
-| ✅ Tracing | 8 | 3 | 477 |
-| ✅ Vector Store | 6 | 2 | 530 |
-| ✅ Video | 2 | 1 | 150 |
-| ✅ Vision | 2 | 1 | 155 |
+| ✅ Tools | 60 | 18 | 3754 |
+| ✅ Tracing | 11 | 3 | 477 |
+| ✅ Vector Store | 9 | 2 | 530 |
+| ✅ Video | 4 | 1 | 150 |
+| ✅ Vision | 4 | 1 | 155 |
 | ✅ Voice | 1 | 2 | 515 |
-| ✅ Web | 4 | 1 | 150 |
-| ✅ Workflows | 7 | 3 | 720 |
+| ✅ Web | 6 | 1 | 154 |
+| ✅ Workflows | 8 | 3 | 910 |
+
+## Undocumented Categories (Need Documentation)
+
+| Category | Features |
+|----------|----------|
+| ❌ Agent-to-User (A2U) | 6 |
+| ❌ Documents | 1 |
+| ❌ Process | 3 |
 
 ## Documentation Without Features
 
 These docs exist but don't match any implemented feature category:
 
-- ℹ️ Callbacks (1 docs, 211 lines)
 - ℹ️ Deep Research (2 docs, 292 lines)
 
 ---
